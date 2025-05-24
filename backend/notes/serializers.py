@@ -23,3 +23,9 @@ class NoteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return super().create(validated_data)
+
+
+class TextToSpeechSerializer(serializers.Serializer):
+    text = serializers.CharField(
+        style={"base_template": "textarea.html"}, required=True, write_only=True
+    )

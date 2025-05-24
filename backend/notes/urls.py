@@ -11,4 +11,9 @@ urlpatterns = [
         views.note_detail,
         name="note_detail",
     ),
+    path(
+        "<int:year>/<int:month>/<int:day>/<slug:slug>/audio/",
+        views.text_to_speech,
+        name="voice_note",
+    ),
 ]

@@ -1,5 +1,8 @@
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from services.elevenlabs_service import tts
+from django.http import StreamingHttpResponse
 
 from .models import Note
 from .serializers import NoteSerializer
@@ -48,3 +51,37 @@ class NoteDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 note_list_create = NoteListCreateView.as_view()
 note_detail = NoteDetailView.as_view()
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def text_to_speech(request, year, month, day, slug):
+    note = (
+        Note.objects.select_related("owner")
+        .filter(
+            created_at__year=int(year),
+            created_at__month=int(month),
+            created_at__day=int(day),
+            slug=slug,
+            owner=request.user,
+        )
+        .first()
+    )
+
+    if not note:
+        return Response(
+            {"error": "Note not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    audio = tts(text=note.content)
+    if not audio:
+        return Response(
+            {"error": "service problem"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return StreamingHttpResponse(
+        audio,
+        content_type="audio/mpeg",
+    )
